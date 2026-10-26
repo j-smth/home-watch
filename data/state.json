@@ -1,0 +1,13 @@
+{
+ "sent": {},
+ "failures": {
+  "weather": 0,
+  "places": 0,
+  "air": 0,
+  "river": 0,
+  "metservice": 0,
+  "firms": 1,
+  "geonet": 0
+ },
+ "lastDigest": null
+}
