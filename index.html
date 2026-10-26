@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>West Melton Home Watch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one column of bands, summary first (alerts, now), then detail. Roadside fire-sign dial is the signature. */
+:root {
+  --bg: #f3f1ea; --panel: #fbfaf6; --ink: #1f2522; --muted: #5d655f; --line: #d9d6cb; --accent: #2f5d62;
+  --low: #3a8a3f; --mod: #2c6fb7; --high: #e0b400; --vhigh: #e57a00; --ext: #c62a1f;
+  --urgent: #c62a1f; --warning: #e57a00; --watch: #c99a00; --info: #2c6fb7;
+  --display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --body: 'Source Sans 3', 'Segoe UI', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #141917; --panel: #1b211f; --ink: #e7e9e3; --muted: #9aa39c; --line: #2d3532; --accent: #7fb3b8; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #141917; --panel: #1b211f; --ink: #e7e9e3; --muted: #9aa39c; --line: #2d3532; --accent: #7fb3b8; color-scheme: dark }
+* { box-sizing: border-box }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+main { max-width: 1100px; margin: 0 auto; padding-block: 24px 48px; display: grid; gap: 28px }
+h1, h2 { font-family: var(--display); font-weight: 700; letter-spacing: .01em; margin: 0; text-wrap: balance }
+h1 { font-size: 2.4rem; line-height: 1 }
+h2 { font-size: 1.35rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted) }
+.mono, td.n, .num { font-family: var(--mono); font-variant-numeric: tabular-nums }
+a { color: var(--accent) }
+header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px }
+.sub { color: var(--muted); font-size: .95rem }
+.pill { display: inline-block; padding: 2px 10px; border-radius: 99px; font: 600 .8rem var(--body); letter-spacing: .04em; text-transform: uppercase; color: #fff }
+.section { display: grid; gap: 12px }
+.grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 16px; min-width: 0 }
+
+.alerts { display: grid; gap: 10px }
+.alert { background: var(--panel); border: 1px solid var(--line); border-left: 6px solid var(--c); border-radius: 4px; padding: 12px 16px }
+.alert h3 { margin: 0; font: 600 1.1rem/1.3 var(--body) }
+.alert p { margin: 4px 0 0; color: var(--muted) }
+.alert details { margin-top: 6px } .alert summary { cursor: pointer; font-weight: 600; color: var(--accent) }
+.alert ul { margin: 6px 0 0; padding-left: 20px }
+.alert .meta { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; font-size: .85rem; color: var(--muted) }
+.allclear { padding: 16px; border: 1px dashed var(--line); border-radius: 6px; color: var(--muted) }
+
+.now { display: grid; gap: 16px; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) }
+@media (max-width: 720px) { .now { grid-template-columns: 1fr } }
+.big { font: 600 3.4rem/1 var(--display) }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin-top: 10px }
+.kv dt { color: var(--muted) } .kv dd { margin: 0; font-family: var(--mono) }
+.dial-wrap { display: grid; justify-items: center; gap: 4px; text-align: center }
+.dial-wrap svg { width: 100%; max-width: 300px; height: auto }
+.dial-label { font: 700 1.8rem/1 var(--display); text-transform: uppercase; letter-spacing: .05em }
+
+.scroll { overflow-x: auto }
+table { width: 100%; border-collapse: collapse; font-size: .95rem }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap }
+th { font-weight: 600; color: var(--muted); font-size: .8rem; text-transform: uppercase; letter-spacing: .05em }
+.days { display: grid; grid-template-columns: repeat(7, minmax(92px, 1fr)); gap: 8px; min-width: 680px }
+.day { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px; display: grid; gap: 2px }
+.day b { font-family: var(--display); font-size: 1.2rem }
+svg text { fill: var(--muted); font: 11px var(--mono) }
+.chart { width: 100%; height: auto; display: block }
+.chart.wide { min-width: 620px }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: .85rem; color: var(--muted) }
+.legend i { display: inline-block; width: 12px; height: 3px; vertical-align: middle; margin-right: 6px }
+.src { display: flex; flex-wrap: wrap; gap: 8px }
+.src span { padding: 3px 10px; border: 1px solid var(--line); border-radius: 99px; font-size: .85rem }
+.links { columns: 2 260px; padding-left: 18px; margin: 0 }
+.banner { background: var(--urgent); color: #fff; padding: 10px 14px; border-radius: 4px; font-weight: 600 }
+footer { color: var(--muted); font-size: .85rem }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>West Melton Home Watch</h1>
+      <div class="sub" id="updated">Loading…</div>
+    </div>
+    <div class="sub">Not an official warning service. In an emergency call <b>111</b>.</div>
+  </header>
+  <div id="stale" hidden class="banner"></div>
+
+  <section class="section"><h2>Alerts</h2><div class="alerts" id="alerts"></div></section>
+
+  <section class="now">
+    <div class="panel" id="current"></div>
+    <div class="panel dial-wrap" id="dial"></div>
+  </section>
+
+  <section class="section"><h2>Next 48 hours</h2>
+    <div class="panel"><div class="scroll"><svg class="chart wide" id="chart48" viewBox="0 0 900 260" role="img" aria-label="Wind gusts, temperature and rain for the next 48 hours"></svg></div>
+    <div class="legend"><span><i style="background:var(--vhigh)"></i>Gusts km/h</span><span><i style="background:var(--accent)"></i>Temperature °C</span><span><i style="background:var(--mod);height:8px"></i>Rain mm/h</span></div></div>
+  </section>
+
+  <section class="section"><h2>7 days</h2><div class="scroll"><div class="days" id="days"></div></div></section>
+
+  <section class="section"><h2>Fire weather</h2>
+    <div class="panel"><div class="scroll"><svg class="chart wide" id="firechart" viewBox="0 0 900 220" role="img" aria-label="Fire Weather Index, past 14 days and forecast"></svg></div>
+    <p class="sub">Estimated Fire Weather Index from model weather, using the Canadian FWI method that NZ's fire danger system is based on. The official rating and fire season status are at <a href="https://www.checkitsalright.nz" target="_blank" rel="noopener">checkitsalright.nz</a>.</p></div>
+  </section>
+
+  <section class="grid">
+    <div class="panel"><h2>Satellite fire hotspots</h2><div class="scroll" id="hotspots"></div></div>
+    <div class="panel"><h2>Earthquakes</h2><div class="scroll" id="quakes"></div></div>
+  </section>
+
+  <section class="grid">
+    <div class="panel"><h2>Waimakariri River (model)</h2><svg class="chart" id="river" viewBox="0 0 420 150" role="img" aria-label="Modelled Waimakariri River discharge"></svg>
+      <p class="sub">GloFAS modelled discharge in m³/s, a trend only. Gauge readings: <a href="https://www.ecan.govt.nz/data/riverflow/" target="_blank" rel="noopener">ECan river flows</a>.</p></div>
+    <div class="panel"><h2>Around the district</h2><div class="scroll" id="places"></div></div>
+  </section>
+
+  <section class="section"><h2>Official sources</h2>
+    <div class="panel"><ul class="links">
+      <li><a href="https://www.metservice.com/warnings/home" target="_blank" rel="noopener">MetService warnings</a></li>
+      <li><a href="https://www.checkitsalright.nz" target="_blank" rel="noopener">Fire season and danger (FENZ)</a></li>
+      <li><a href="https://www.fireandemergency.nz/incidents-and-news/" target="_blank" rel="noopener">FENZ incidents and news</a></li>
+      <li><a href="https://www.selwyn.govt.nz/services/civil-defence" target="_blank" rel="noopener">Selwyn District Civil Defence</a></li>
+      <li><a href="https://www.cdemcanterbury.govt.nz" target="_blank" rel="noopener">Canterbury CDEM</a></li>
+      <li><a href="https://www.geonet.org.nz" target="_blank" rel="noopener">GeoNet</a></li>
+      <li><a href="https://firms.modaps.eosdis.nasa.gov/map/#d:24hrs;@172.37,-43.52,10z" target="_blank" rel="noopener">NASA FIRMS fire map</a></li>
+      <li><a href="https://www.ecan.govt.nz/data/riverflow/" target="_blank" rel="noopener">ECan river flows</a></li>
+    </ul></div>
+  </section>
+
+  <section class="section"><h2>Feed status</h2><div class="src" id="sources"></div></section>
+  <footer>Data: Open-Meteo (CC BY 4.0), MetService CAP, NASA FIRMS, GeoNet (CC BY 4.0), Copernicus GloFAS. Checked every 30 minutes.</footer>
+</main>
+
+<script>
+const LEVEL = { urgent: 'Act now', warning: 'Warning', watch: 'Be ready', info: 'Info' };
+const DANGER = [['Low', '--low'], ['Moderate', '--mod'], ['High', '--high'], ['Very high', '--vhigh'], ['Extreme', '--ext']];
+const dangerVar = (d) => (DANGER.find(([n]) => n === d) ?? DANGER[0])[1];
+const WX = { 0: 'Clear', 1: 'Mostly clear', 2: 'Partly cloudy', 3: 'Overcast', 45: 'Fog', 48: 'Rime fog', 51: 'Light drizzle', 53: 'Drizzle', 55: 'Heavy drizzle',
+  61: 'Light rain', 63: 'Rain', 65: 'Heavy rain', 66: 'Freezing rain', 67: 'Freezing rain', 71: 'Light snow', 73: 'Snow', 75: 'Heavy snow', 77: 'Snow grains',
+  80: 'Showers', 81: 'Showers', 82: 'Violent showers', 85: 'Snow showers', 86: 'Snow showers', 95: 'Thunderstorm', 96: 'Thunder, hail', 99: 'Thunder, hail' };
+const DIRS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+const dir = (d) => DIRS[Math.round(d / 45) % 8];
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const r = Math.round;
+const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const ago = (iso) => { const m = (Date.now() - new Date(iso)) / 6e4; return m < 60 ? `${r(m)} min ago` : m < 2880 ? `${r(m / 60)} h ago` : `${r(m / 1440)} days ago`; };
+
+const src = new URLSearchParams(location.search).has('demo') ? 'test/status.preview.json' : 'data/status.json';
+async function load() {
+  try {
+    const s = await (await fetch(`${src}?t=${Date.now()}`)).json();
+    render(s);
+  } catch (e) {
+    $('updated').textContent = 'No data yet. The monitor has not run, or data/status.json is missing.';
+  }
+}
+
+function render(s) {
+  const age = (Date.now() - new Date(s.generatedAt)) / 6e4;
+  $('updated').textContent = `Updated ${new Date(s.generatedAt).toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland', weekday: 'short', hour: 'numeric', minute: '2-digit' })} (${ago(s.generatedAt)})`;
+  $('stale').hidden = age < 90;
+  $('stale').textContent = `Data is ${ago(s.generatedAt).replace(' ago', '')} old. The monitor may have stopped, so check official sources directly.`;
+
+  $('alerts').innerHTML = s.alerts.length ? s.alerts.map((a) => `
+    <article class="alert" style="--c:var(--${a.level})">
+      <div class="meta"><span class="pill" style="background:var(--${a.level})">${LEVEL[a.level]}</span>${a.official ? '<span>Official</span>' : '<span>Estimated</span>'}</div>
+      <h3>${esc(a.title)}</h3><p>${esc(a.body)}</p>
+      ${a.url ? `<p><a href="${esc(a.url)}" target="_blank" rel="noopener">Details</a></p>` : ''}
+      ${a.actions?.length ? `<details ${a.level === 'urgent' ? 'open' : ''}><summary>Prepare the home</summary><ul>${a.actions.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></details>` : ''}
+    </article>`).join('') : '<div class="allclear">No alerts for West Melton right now.</div>';
+
+  const c = s.current;
+  $('current').innerHTML = c ? `<h2>Now at West Melton</h2>
+    <div class="big">${c.temperature_2m.toFixed(1)}°</div><div>${WX[c.weather_code] ?? ''}</div>
+    <dl class="kv"><dt>Wind</dt><dd>${dir(c.wind_direction_10m)} ${r(c.wind_speed_10m)} km/h, gusts ${r(c.wind_gusts_10m)}</dd>
+    <dt>Humidity</dt><dd>${r(c.relative_humidity_2m)}%</dd><dt>Rain</dt><dd>${c.precipitation} mm/h</dd>
+    ${s.air?.[0] ? `<dt>PM2.5</dt><dd>${r(s.air[0].pm2_5)} µg/m³</dd>` : ''}</dl>` : '<h2>Now</h2><p class="sub">Weather feed unavailable.</p>';
+
+  const today = s.fire.find((d) => d.date === s.today);
+  $('dial').innerHTML = today ? `<h2>Fire danger today</h2>${dial(today.danger)}
+    <div class="dial-label" style="color:var(${dangerVar(today.danger)})">${today.danger}</div>
+    <div class="sub mono">FWI ${today.fwi.toFixed(1)} · ISI ${today.isi.toFixed(1)} · BUI ${today.bui.toFixed(0)}</div>
+    <div class="sub">Estimate. Afternoon: ${r(today.maxTemp)} °C, ${r(today.minRh)}% RH, gusts ${r(today.peakGust)} km/h</div>` : '<h2>Fire danger</h2><p class="sub">Not available.</p>';
+
+  chart48(s.hourly);
+  $('days').innerHTML = s.daily.map((d) => `<div class="day"><b>${d.label}</b><span>${WX[d.code] ?? ''}</span>
+    <span class="num">${r(d.min)}–${r(d.max)}°</span><span class="num">${d.rain.toFixed(0)} mm${d.snow > 0 ? ` · ${d.snow.toFixed(0)} cm snow` : ''}</span>
+    <span class="num" style="color:${d.gust >= 90 ? 'var(--ext)' : d.gust >= 70 ? 'var(--vhigh)' : 'inherit'}">${d.gustDir} ${r(d.gust)} km/h</span></div>`).join('');
+  fireChart(s.fire, s.today);
+
+  $('hotspots').innerHTML = s.hotspots.length ? table(['Distance', 'Seen', 'Source', 'FRP MW'], s.hotspots.slice(0, 12).map((h) =>
+    [`${h.km.toFixed(1)} km ${h.dir}`, ago(h.time), h.source.replace(/_NRT|_/g, ' ').trim(), h.frp?.toFixed(1)])) : `<p class="sub">${s.sources.firms?.ok ? 'No hotspots within 60 km in the last 48 h.' : 'Feed unavailable: ' + esc(s.sources.firms?.error)}</p>`;
+  $('quakes').innerHTML = s.quakes.length ? table(['Mag', 'Where', 'MMI', 'When'], s.quakes.map((q) =>
+    [`M${q.magnitude.toFixed(1)}`, `<a href="${esc(q.url)}" target="_blank" rel="noopener">${esc(q.locality)}</a>`, q.mmi, ago(q.time)]), true) : '<p class="sub">No felt earthquakes nearby recently.</p>';
+  $('places').innerHTML = table(['Place', 'Now', 'Today', 'Rain', 'Gust'], s.places.map((p) =>
+    [p.name, `${p.current.temperature_2m.toFixed(0)}°`, `${r(p.today.min)}–${r(p.today.max)}°`, `${p.today.rain.toFixed(0)} mm`, `${r(p.today.gust)} km/h`]));
+  riverChart(s.river, s.today);
+  $('sources').innerHTML = Object.entries(s.sources).map(([n, v]) =>
+    `<span title="${esc(v.error ?? 'OK')}" style="border-color:var(${v.ok ? '--low' : '--ext'})">${v.ok ? '●' : '✕'} ${n}</span>`).join('');
+}
+
+function table(head, rows, raw = false) {
+  return `<table><thead><tr>${head.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map((row) =>
+    `<tr>${row.map((v) => `<td class="n">${raw ? v : esc(v)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+}
+
+// NZ roadside fire danger sign: five-band half dial with a pointer.
+function dial(level) {
+  const idx = Math.max(0, DANGER.findIndex(([n]) => n === level));
+  const cx = 150, cy = 140, R = 120, r0 = 62;
+  const seg = (i) => {
+    const a0 = Math.PI * (1 - i / 5), a1 = Math.PI * (1 - (i + 1) / 5);
+    const p = (a, rr) => `${cx + rr * Math.cos(a)},${cy - rr * Math.sin(a)}`;
+    return `<path d="M${p(a0, r0)} L${p(a0, R)} A${R},${R} 0 0 1 ${p(a1, R)} L${p(a1, r0)} A${r0},${r0} 0 0 0 ${p(a0, r0)}Z" fill="var(${DANGER[i][1]})" stroke="var(--panel)" stroke-width="3"/>`;
+  };
+  const a = Math.PI * (1 - (idx + 0.5) / 5);
+  return `<svg viewBox="0 0 300 160" aria-hidden="true">${DANGER.map((_, i) => seg(i)).join('')}
+    <line x1="${cx}" y1="${cy}" x2="${cx + (R - 8) * Math.cos(a)}" y2="${cy - (R - 8) * Math.sin(a)}" stroke="var(--ink)" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="${cx}" cy="${cy}" r="12" fill="var(--ink)"/></svg>`;
+}
+
+function chart48(h) {
+  const el = $('chart48'); if (!h.length) { el.innerHTML = ''; return; }
+  const W = 900, H = 260, L = 40, Rt = 40, T = 14, B = 34, iw = W - L - Rt, ih = H - T - B;
+  const x = (i) => L + (i / (h.length - 1)) * iw;
+  const gMax = Math.max(100, ...h.map((d) => d.wind_gusts_10m)); const gy = (v) => T + ih - (v / gMax) * ih;
+  const tMin = Math.floor(Math.min(...h.map((d) => d.temperature_2m)) / 5) * 5, tMax = Math.ceil(Math.max(...h.map((d) => d.temperature_2m)) / 5) * 5 || tMin + 5;
+  const ty = (v) => T + ih - ((v - tMin) / (tMax - tMin || 1)) * ih;
+  const rMax = Math.max(5, ...h.map((d) => d.precipitation)); const bw = iw / h.length * 0.7;
+  let s = '';
+  for (const g of [0, 25, 50, 75, 100].filter((g) => g <= gMax)) s += `<line x1="${L}" x2="${W - Rt}" y1="${gy(g)}" y2="${gy(g)}" stroke="var(--line)"/><text x="${L - 6}" y="${gy(g) + 4}" text-anchor="end">${g}</text>`;
+  s += `<line x1="${L}" x2="${W - Rt}" y1="${gy(90)}" y2="${gy(90)}" stroke="var(--ext)" stroke-dasharray="4 4"/><text x="${L + 6}" y="${gy(90) - 4}">damaging 90</text>`;
+  for (const t of [tMin, (tMin + tMax) / 2, tMax]) s += `<text x="${W - Rt + 6}" y="${ty(t) + 4}">${r(t)}°</text>`;
+  h.forEach((d, i) => { if (d.precipitation > 0) { const bh = (d.precipitation / rMax) * ih * 0.5; s += `<rect x="${x(i) - bw / 2}" y="${T + ih - bh}" width="${bw}" height="${bh}" fill="var(--mod)" opacity=".55"/>`; } });
+  h.forEach((d, i) => { if (d.time.endsWith('T00:00') || i === 0) s += `<line x1="${x(i)}" x2="${x(i)}" y1="${T}" y2="${T + ih}" stroke="var(--line)"/><text x="${x(i) + 4}" y="${H - 12}">${new Date(d.time).toLocaleDateString('en-NZ', { weekday: 'short' })}</text>`; });
+  const line = (f, y) => h.map((d, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(f(d)).toFixed(1)}`).join('');
+  s += `<path d="${line((d) => d.wind_gusts_10m, gy)}L${x(h.length - 1)},${T + ih}L${L},${T + ih}Z" fill="var(--vhigh)" opacity=".12"/>`;
+  s += `<path d="${line((d) => d.wind_gusts_10m, gy)}" fill="none" stroke="var(--vhigh)" stroke-width="2.5"/>`;
+  s += `<path d="${line((d) => d.temperature_2m, ty)}" fill="none" stroke="var(--accent)" stroke-width="2"/>`;
+  const pk = h.reduce((a, b, i) => (b.wind_gusts_10m > h[a].wind_gusts_10m ? i : a), 0);
+  s += `<circle cx="${x(pk)}" cy="${gy(h[pk].wind_gusts_10m)}" r="5" fill="var(--vhigh)"/><text x="${x(pk)}" y="${gy(h[pk].wind_gusts_10m) - 10}" text-anchor="middle">${r(h[pk].wind_gusts_10m)} ${dir(h[pk].wind_direction_10m)}</text>`;
+  el.innerHTML = s;
+}
+
+function fireChart(f, today) {
+  const el = $('firechart'); if (!f.length) { el.innerHTML = ''; return; }
+  const W = 900, H = 220, L = 34, T = 10, B = 30, iw = W - L - 10, ih = H - T - B;
+  const max = Math.max(35, ...f.map((d) => d.fwi)); const y = (v) => T + ih - (v / max) * ih; const bw = iw / f.length;
+  let s = '';
+  for (const [v, n] of [[5, 'Mod'], [12, 'High'], [20, 'V.High'], [30, 'Ext']]) s += `<line x1="${L}" x2="${W - 10}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-dasharray="3 3"/><text x="${L - 4}" y="${y(v) + 4}" text-anchor="end">${v}</text><text x="${W - 12}" y="${y(v) - 3}" text-anchor="end">${n}</text>`;
+  f.forEach((d, i) => {
+    const future = d.date >= today;
+    s += `<rect x="${L + i * bw + 1}" y="${y(d.fwi)}" width="${bw - 2}" height="${T + ih - y(d.fwi)}" fill="var(${dangerVar(d.danger)})" opacity="${future ? 1 : .45}"><title>${d.date}: FWI ${d.fwi.toFixed(1)} (${d.danger})</title></rect>`;
+    if (d.date === today) s += `<text x="${L + i * bw + bw / 2}" y="${H - 10}" text-anchor="middle">Today</text>`;
+    else if (i % 3 === 0) s += `<text x="${L + i * bw + bw / 2}" y="${H - 10}" text-anchor="middle">${d.date.slice(8)}</text>`;
+  });
+  el.innerHTML = s;
+}
+
+function riverChart(rv, today) {
+  const el = $('river'); if (!rv?.time) { el.innerHTML = '<text x="10" y="20">Model unavailable</text>'; return; }
+  const W = 420, H = 150, L = 40, T = 10, B = 22, iw = W - L - 8, ih = H - T - B; const v = rv.river_discharge;
+  const max = Math.max(...(rv.river_discharge_max ?? v)) * 1.1; const x = (i) => L + (i / (v.length - 1)) * iw; const y = (q) => T + ih - (q / max) * ih;
+  const ti = rv.time.indexOf(today);
+  let s = `<text x="${L - 4}" y="${y(0)}" text-anchor="end">0</text><text x="${L - 4}" y="${y(max / 1.1) + 4}" text-anchor="end">${r(max / 1.1)}</text>`;
+  if (ti >= 0) s += `<line x1="${x(ti)}" x2="${x(ti)}" y1="${T}" y2="${T + ih}" stroke="var(--line)"/><text x="${x(ti) + 4}" y="${H - 6}">today</text>`;
+  if (rv.river_discharge_max) s += `<path d="${rv.river_discharge_max.map((q, i) => `${i ? 'L' : 'M'}${x(i)},${y(q)}`).join('')}" fill="none" stroke="var(--mod)" stroke-dasharray="4 3"/>`;
+  s += `<path d="${v.map((q, i) => `${i ? 'L' : 'M'}${x(i)},${y(q)}`).join('')}" fill="none" stroke="var(--mod)" stroke-width="2.5"/>`;
+  el.innerHTML = s;
+}
+
+load();
+setInterval(load, 10 * 60e3);
+</script>
+</body>
+</html>

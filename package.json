@@ -1,0 +1,15 @@
+{
+  "name": "west-melton-watch",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Free weather, fire and hazard watch for a home in West Melton, Canterbury NZ",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "fixtures": "node test/make-fixtures.mjs",
+    "demo": "node test/make-fixtures.mjs && node scripts/run.mjs --fixtures test/fixtures --dry-run",
+    "check": "node scripts/run.mjs --dry-run",
+    "start": "node scripts/run.mjs"
+  }
+}

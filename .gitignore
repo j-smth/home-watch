@@ -1,0 +1,3 @@
+node_modules/
+test/status.preview.json
+.DS_Store
