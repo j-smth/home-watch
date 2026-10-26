@@ -80,3 +80,14 @@ npm run check       # live fetch, prints alerts, sends nothing
 - **The river panel is a coarse model.** Use ECan gauges for real flood decisions.
 - FENZ does not publish a public incidents API, so live incidents are linked rather
   than monitored.
+
+## On the TV (Home Base)
+
+`tv.html` is a glanceable panel for a wall TV: alert banner (or "All clear"), conditions now,
+today's fire danger dial and the next 3 days. It scales to whatever box it's in and refreshes
+every 5 minutes.
+
+- Full screen: `https://<your-username>.github.io/home-watch/tv.html`
+- Inside another dashboard: `<iframe src="https://<your-username>.github.io/home-watch/tv.html" style="border:0;width:100%;height:100%"></iframe>`
+- Light version: add `?theme=light`
+- Raw data for building your own panel: `https://<your-username>.github.io/home-watch/data/status.json`

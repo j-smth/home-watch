@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Home Watch TV</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;600&display=swap">
+<style>
+/* Glanceable panel for a wall TV. Fills whatever box it's given (full screen or an
+   iframe tile in Home Base); all sizes scale with the box, read from across a room.
+   ?theme=light for a light panel. */
+:root {
+  --bg: #101513; --panel: #182019; --ink: #eef0ea; --muted: #9aa39c; --line: #28312c;
+  --low: #3a8a3f; --mod: #2c6fb7; --high: #e0b400; --vhigh: #e57a00; --ext: #d63a2e;
+  --urgent: #d63a2e; --warning: #e57a00; --watch: #c99a00; --info: #2c6fb7; --clear: #3a8a3f;
+  --display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --body: 'Source Sans 3', 'Segoe UI', system-ui, sans-serif;
+  --u: min(1vw, 1.78vh);   /* one unit = 1% of width on a 16:9 box */
+  color-scheme: dark;
+}
+:root[data-theme="light"] { --bg: #f3f1ea; --panel: #fbfaf6; --ink: #1f2522; --muted: #5d655f; --line: #d9d6cb; color-scheme: light }
+* { box-sizing: border-box }
+html, body { height: 100%; margin: 0 }
+body { background: var(--bg); color: var(--ink); font: calc(var(--u) * 1.9) / 1.3 var(--body); overflow: hidden;
+  display: grid; grid-template-rows: auto 1fr auto; gap: calc(var(--u) * 1.4); padding: calc(var(--u) * 2) }
+.status { display: flex; align-items: center; gap: calc(var(--u) * 1.5); padding: calc(var(--u) * 1.2) calc(var(--u) * 2);
+  border-radius: calc(var(--u) * .6); background: var(--c); color: #fff }
+.status b { font: 700 calc(var(--u) * 3.4) / 1 var(--display); text-transform: uppercase; letter-spacing: .03em }
+.status span { font-size: calc(var(--u) * 2.1); opacity: .95; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.status .more { margin-left: auto; flex: none }
+main { display: grid; grid-template-columns: 1fr 1fr 1.25fr; gap: calc(var(--u) * 1.4); min-height: 0 }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: calc(var(--u) * .6); padding: calc(var(--u) * 1.6); min-width: 0; min-height: 0;
+  display: grid; align-content: center; gap: calc(var(--u) * .9) }
+h2 { margin: 0; font: 600 calc(var(--u) * 1.6) / 1 var(--body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted) }
+.temp { font: 600 calc(var(--u) * 9) / .9 var(--display) }
+.big { font: 700 calc(var(--u) * 3.2) / 1 var(--display); text-transform: uppercase; letter-spacing: .04em }
+.muted { color: var(--muted) }
+.dial svg { width: 100%; max-height: calc(var(--u) * 16) }
+.dial { justify-items: center; text-align: center }
+.days { display: grid; gap: calc(var(--u) * .9) }
+.day { display: grid; grid-template-columns: 4.2em 1fr auto; gap: calc(var(--u) * 1); align-items: baseline; border-bottom: 1px solid var(--line); padding-bottom: calc(var(--u) * .7) }
+.day b { font: 700 calc(var(--u) * 2.4) / 1 var(--display) }
+.num { font-variant-numeric: tabular-nums }
+footer { display: flex; justify-content: space-between; font-size: calc(var(--u) * 1.3); color: var(--muted) }
+footer .stale { color: var(--ext); font-weight: 600 }
+</style>
+</head>
+<body>
+<div class="status" id="status" style="--c:var(--line)"><b>Loading</b></div>
+<main>
+  <section class="card" id="now"></section>
+  <section class="card dial" id="fire"></section>
+  <section class="card" id="days"></section>
+</main>
+<footer><span id="updated"></span><span>Emergency: 111</span></footer>
+
+<script>
+const LEVEL = { urgent: 'Act now', warning: 'Warning', watch: 'Be ready', info: 'Info' };
+const DANGER = [['Low', '--low'], ['Moderate', '--mod'], ['High', '--high'], ['Very high', '--vhigh'], ['Extreme', '--ext']];
+const dangerVar = (d) => (DANGER.find(([n]) => n === d) ?? DANGER[0])[1];
+const WX = { 0: 'Clear', 1: 'Mostly clear', 2: 'Partly cloudy', 3: 'Overcast', 45: 'Fog', 48: 'Fog', 51: 'Drizzle', 53: 'Drizzle', 55: 'Drizzle',
+  61: 'Light rain', 63: 'Rain', 65: 'Heavy rain', 66: 'Freezing rain', 67: 'Freezing rain', 71: 'Light snow', 73: 'Snow', 75: 'Heavy snow', 77: 'Snow',
+  80: 'Showers', 81: 'Showers', 82: 'Heavy showers', 85: 'Snow showers', 86: 'Snow showers', 95: 'Thunderstorm', 96: 'Thunder, hail', 99: 'Thunder, hail' };
+const DIRS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+const dir = (d) => DIRS[Math.round(d / 45) % 8];
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const r = Math.round;
+const params = new URLSearchParams(location.search);
+if (params.get('theme') === 'light') document.documentElement.dataset.theme = 'light';
+const src = params.has('demo') ? 'test/status.preview.json' : 'data/status.json';
+
+function dial(level) {
+  const idx = Math.max(0, DANGER.findIndex(([n]) => n === level));
+  const cx = 150, cy = 140, R = 120, r0 = 62;
+  const p = (a, rr) => `${cx + rr * Math.cos(a)},${cy - rr * Math.sin(a)}`;
+  const seg = (i) => { const a0 = Math.PI * (1 - i / 5), a1 = Math.PI * (1 - (i + 1) / 5);
+    return `<path d="M${p(a0, r0)} L${p(a0, R)} A${R},${R} 0 0 1 ${p(a1, R)} L${p(a1, r0)} A${r0},${r0} 0 0 0 ${p(a0, r0)}Z" fill="var(${DANGER[i][1]})" stroke="var(--panel)" stroke-width="3"/>`; };
+  const a = Math.PI * (1 - (idx + 0.5) / 5);
+  return `<svg viewBox="0 0 300 150" aria-hidden="true">${DANGER.map((_, i) => seg(i)).join('')}
+    <line x1="${cx}" y1="${cy}" x2="${cx + (R - 8) * Math.cos(a)}" y2="${cy - (R - 8) * Math.sin(a)}" stroke="var(--ink)" stroke-width="7" stroke-linecap="round"/>
+    <circle cx="${cx}" cy="${cy}" r="12" fill="var(--ink)"/></svg>`;
+}
+
+function render(s) {
+  const alerts = s.alerts.filter((a) => a.level !== 'info');
+  const top = alerts[0];
+  const st = $('status');
+  if (top) {
+    st.style.setProperty('--c', `var(--${top.level})`);
+    st.innerHTML = `<b>${LEVEL[top.level]}</b><span>${esc(top.title)}</span>${alerts.length > 1 ? `<span class="more">+${alerts.length - 1} more</span>` : ''}`;
+  } else {
+    st.style.setProperty('--c', 'var(--clear)');
+    st.innerHTML = '<b>All clear</b><span>No weather, fire or earthquake alerts for West Melton</span>';
+  }
+
+  const c = s.current;
+  $('now').innerHTML = c ? `<h2>Now</h2><div class="temp num">${r(c.temperature_2m)}°</div>
+    <div class="big">${WX[c.weather_code] ?? ''}</div>
+    <div class="num">${dir(c.wind_direction_10m)} ${r(c.wind_speed_10m)} km/h, gusts ${r(c.wind_gusts_10m)}</div>
+    <div class="muted num">Humidity ${r(c.relative_humidity_2m)}%</div>` : '<h2>Now</h2><div class="muted">Weather unavailable</div>';
+
+  const f = s.fire.find((d) => d.date === s.today);
+  $('fire').innerHTML = f ? `<h2>Fire danger today</h2>${dial(f.danger)}
+    <div class="big" style="color:var(${dangerVar(f.danger)})">${f.danger}</div><div class="muted">Estimate · official: checkitsalright.nz</div>`
+    : '<h2>Fire danger</h2><div class="muted">Unavailable</div>';
+
+  $('days').innerHTML = `<h2>Next 3 days</h2><div class="days">${s.daily.slice(0, 3).map((d, i) => `
+    <div class="day"><b>${i === 0 ? 'Today' : d.label}</b><span>${WX[d.code] ?? ''}</span><span class="num">${r(d.min)}–${r(d.max)}°</span>
+    <span></span><span class="muted num">${d.rain >= 1 ? `${r(d.rain)} mm rain` : 'Dry'}</span>
+    <span class="num" style="color:${d.gust >= 90 ? 'var(--ext)' : d.gust >= 70 ? 'var(--vhigh)' : 'inherit'}">${d.gustDir} ${r(d.gust)}</span></div>`).join('')}</div>`;
+
+  const ageMin = (Date.now() - new Date(s.generatedAt)) / 6e4;
+  const t = new Date(s.generatedAt).toLocaleTimeString('en-NZ', { timeZone: 'Pacific/Auckland', hour: 'numeric', minute: '2-digit' });
+  $('updated').innerHTML = ageMin > 90 ? `<span class="stale">Not updated since ${t}: check MetService and FENZ directly</span>` : `Updated ${t}`;
+}
+
+async function load() {
+  try { render(await (await fetch(`${src}?t=${Date.now()}`, { cache: 'no-store' })).json()); }
+  catch { $('updated').innerHTML = '<span class="stale">Can\'t reach Home Watch data</span>'; }
+}
+load();
+setInterval(load, 5 * 60e3);
+</script>
+</body>
+</html>
