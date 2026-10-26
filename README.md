@@ -1,4 +1,4 @@
-# West Melton Home Watch
+# Home Watch
 
 A free monitor for a home in West Melton, Canterbury. Every 30 minutes it checks
 official warnings, forecast weather, fire weather, satellite fire hotspots,
@@ -45,7 +45,7 @@ silent feed is not mistaken for "all clear". All thresholds are in
 5. In the repo, go to **Settings → Secrets and variables → Actions** and add the secrets
    `NTFY_TOPIC`, `FIRMS_MAP_KEY` and `HEALTHCHECK_URL`. Then add a variable
    `DASHBOARD_URL` with your Pages address.
-6. **Settings → Pages:** deploy from branch `main`, folder `/`.
+6. **Settings → Pages:** deploy from branch `main`, folder `/`. The dashboard appears at `https://<your-username>.github.io/home-watch/`. It carries a `noindex` tag so search engines leave it out, but anyone with the link can open it.
 7. **Actions → Home watch → Run workflow** to test. You should get the morning summary
    if it is after 6 am.
 
