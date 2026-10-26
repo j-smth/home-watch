@@ -85,3 +85,17 @@ test('nearby detections of one fire make one alert', () => {
   assert.equal(a.length, 1);
   assert.match(a[0].body, /3 detections/);
 });
+
+test('Himawari CSV parsing and two-scan confirmation', async () => {
+  const { parseWlfCsv, scanTime, pickVersion } = await import('../lib/himawari.mjs');
+  assert.equal(scanTime('H09_20261026_0130_L2WLF010_FLDK.06001_06001.csv'), '2026-10-26T01:30:00Z');
+  assert.equal(pickVersion(['bet', '010']), '010');
+  const csv = 'year,month,day,hour,min,lat,lon,frp,confidence\n2026,10,26,1,30,-43.49,172.33,25.1,80\n2026,10,26,1,30,10,100,5,50';
+  const a = parseWlfCsv(csv, 'H09_20261026_0130_L2WLF010_FLDK.csv', [171.7, -43.95, 172.95, -43.15]);
+  assert.equal(a.length, 1);                       // the point outside the box is dropped
+  const b = { ...a[0], time: '2026-10-26T01:40:00Z', lon: 172.34 };
+  const fresh = (p) => ({ ...p, time: new Date(Date.now() - 600e3).toISOString() });
+  assert.equal(R.hotspotAlerts([fresh(a[0])], null).length, 0);          // one scan: ignored
+  assert.equal(R.confirmGeostationary([a[0], b]).length, 2);              // two scans: confirmed
+  assert.throws(() => parseWlfCsv('x,y\n1,2', 'f.csv', [0, 0, 1, 1]), /not recognised/);
+});

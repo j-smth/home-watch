@@ -12,6 +12,7 @@ import * as src from '../lib/sources.mjs';
 import * as rules from '../lib/rules.mjs';
 import { distanceKm, bearingDeg, compass } from '../lib/geo.mjs';
 import { push, heartbeat } from '../lib/notify.mjs';
+import { himawari } from '../lib/himawari.mjs';
 
 const args = process.argv.slice(2);
 const DRY = args.includes('--dry-run');
@@ -31,6 +32,7 @@ async function collect() {
     metservice: () => FIX ? fixture('metservice') : src.metserviceCap(),
     firms: () => FIX ? fixture('firms') : src.firms(env.FIRMS_MAP_KEY, FIRE_BBOX, 2),
     geonet: () => FIX ? fixture('geonet') : src.geonetQuakes(3),
+    himawari: () => FIX ? Promise.resolve([]) : himawari(env.PTREE_USER, env.PTREE_PASS, FIRE_BBOX),
   };
   const names = Object.keys(jobs);
   const settled = await Promise.allSettled(names.map((n) => jobs[n]()));
@@ -74,7 +76,7 @@ async function main() {
 
   const alerts = rules.sortAlerts([
     ...(data.metservice ? rules.capAlerts(data.metservice, nearbyPoints, now) : []),
-    ...(data.firms ? rules.hotspotAlerts(data.firms, wind, now) : []),
+    ...rules.hotspotAlerts([...(data.firms ?? []), ...(data.himawari ?? [])], wind, now),
     ...rules.fireWeatherAlerts(fire, todayLocal),
     ...(w ? rules.weatherAlerts(w.hourly, nowLocal) : []),
     ...(data.geonet ? rules.quakeAlerts(data.geonet, now) : []),
@@ -103,7 +105,7 @@ async function main() {
     fire: fire.filter((x) => x.date >= addDays(todayLocal, -14)),
     places: (data.places ?? []).map((p, i) => ({ name: PLACES[i + 1].name, current: p.current, today: {
       max: p.daily.temperature_2m_max[0], min: p.daily.temperature_2m_min[0], rain: p.daily.precipitation_sum[0], gust: p.daily.wind_gusts_10m_max[0] } })),
-    hotspots: (data.firms ?? []).map((h) => ({ ...h, km: distanceKm(HOME, h), dir: compass(bearingDeg(HOME, h)) }))
+    hotspots: [...(data.firms ?? []), ...rules.confirmGeostationary(data.himawari ?? [])].map((h) => ({ ...h, km: distanceKm(HOME, h), dir: compass(bearingDeg(HOME, h)) }))
       .filter((h) => h.km <= 60).sort((a, b) => a.km - b.km).slice(0, 50),
     quakes: (data.geonet ?? []).map((q) => ({ ...q, km: distanceKm(HOME, q), dir: compass(bearingDeg(HOME, q)) }))
       .filter((q) => q.km <= THRESHOLDS.quakeKm).slice(0, 10),

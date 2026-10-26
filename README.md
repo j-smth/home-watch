@@ -14,6 +14,7 @@ fire.
 | Threat | Source (free) | Alerts when |
 |---|---|---|
 | Official weather warnings | MetService CAP feed | A warning or watch polygon covers West Melton, Christchurch, Darfield or Rolleston |
+| Wildfire nearby, fast | Himawari-9 wildfire product (JAXA P-Tree), every 10 min, 2 km pixels | Same as below, but only once two scans see heat within 3 km (cuts false alarms) |
 | Wildfire nearby | NASA FIRMS satellite hotspots (VIIRS ×3, MODIS) | Heat source within 30 km in the last 24 h. Urgent if within 10 km, or upwind in wind over 25 km/h |
 | Fire weather | Open-Meteo, Fire Weather Index computed locally | FWI 20+ in the next 3 days, or a nor'west fire day (≤30% humidity, gusts ≥60 km/h, ≥24 °C) |
 | Wind | Open-Meteo | Gusts ≥70 km/h (watch) or ≥90 km/h (warning) in the next 48 h |
@@ -39,14 +40,17 @@ silent feed is not mistaken for "all clear". All thresholds are in
    Subscribe both homeowners' phones.
 3. **Fire hotspots:** get a free FIRMS map key at
    <https://firms.modaps.eosdis.nasa.gov/api/map_key/>.
-4. **Dead-man's switch (recommended):** create a free check at
+4. **Fast fire detection:** register free with JAXA P-Tree at
+   <https://www.eorc.jaxa.jp/ptree/registration_top.html>. You get an FTP user name and
+   password by email. Add them as secrets `PTREE_USER` and `PTREE_PASS`.
+5. **Dead-man's switch (recommended):** create a free check at
    <https://healthchecks.io> with a 30-minute period and 30-minute grace. It emails you
    if the monitor stops running.
-5. In the repo, go to **Settings → Secrets and variables → Actions** and add the secrets
-   `NTFY_TOPIC`, `FIRMS_MAP_KEY` and `HEALTHCHECK_URL`. Then add a variable
+6. In the repo, go to **Settings → Secrets and variables → Actions** and add the secrets
+   `NTFY_TOPIC`, `FIRMS_MAP_KEY`, `PTREE_USER`, `PTREE_PASS` and `HEALTHCHECK_URL`. Then add a variable
    `DASHBOARD_URL` with your Pages address.
-6. **Settings → Pages:** deploy from branch `main`, folder `/`. The dashboard appears at `https://<your-username>.github.io/home-watch/`. It carries a `noindex` tag so search engines leave it out, but anyone with the link can open it.
-7. **Actions → Home watch → Run workflow** to test. You should get the morning summary
+7. **Settings → Pages:** deploy from branch `main`, folder `/`. The dashboard appears at `https://<your-username>.github.io/home-watch/`. It carries a `noindex` tag so search engines leave it out, but anyone with the link can open it.
+8. **Actions → Home watch → Run workflow** to test. You should get the morning summary
    if it is after 6 am.
 
 ## Run locally
@@ -64,6 +68,9 @@ npm run check       # live fetch, prints alerts, sends nothing
   about 3 hours later. A grass fire in a nor'wester can cross several kilometres in
   that time. Hotspots are confirmation, not early warning; the fire-weather outlook
   is the early warning.
+- **Himawari is faster but coarser.** Scans arrive about 20–30 minutes after they're
+  taken, but a 2 km pixel only shows fires large or hot enough to stand out. Small fires
+  stopped quickly won't appear.
 - **The fire danger here is an estimate** from model weather using the same FWI
   equations FENZ's system builds on. It does not account for grass curing, which
   matters a lot on the Plains. The official rating is at checkitsalright.nz.

@@ -129,7 +129,7 @@ footer { color: var(--muted); font-size: .85rem }
   </section>
 
   <section class="section"><h2>Feed status</h2><div class="src" id="sources"></div></section>
-  <footer>Data: Open-Meteo (CC BY 4.0), MetService CAP, NASA FIRMS, GeoNet (CC BY 4.0), Copernicus GloFAS. Checked every 30 minutes.</footer>
+  <footer>Data: Open-Meteo (CC BY 4.0), MetService CAP, NASA FIRMS, Himawari-9 wildfire product (JAXA/EORC P-Tree), GeoNet (CC BY 4.0), Copernicus GloFAS. Checked every 30 minutes.</footer>
 </main>
 
 <script>
@@ -191,7 +191,7 @@ function render(s) {
   fireChart(s.fire, s.today);
 
   $('hotspots').innerHTML = s.hotspots.length ? table(['Distance', 'Seen', 'Source', 'FRP MW'], s.hotspots.slice(0, 12).map((h) =>
-    [`${h.km.toFixed(1)} km ${h.dir}`, ago(h.time), h.source.replace(/_NRT|_/g, ' ').trim(), h.frp?.toFixed(1)])) : `<p class="sub">${s.sources.firms?.ok ? 'No hotspots within 60 km in the last 48 h.' : 'Feed unavailable: ' + esc(s.sources.firms?.error)}</p>`;
+    [`${h.km.toFixed(1)} km ${h.dir}`, ago(h.time), h.source.replace(/_NRT|_/g, ' ').trim(), h.frp?.toFixed(1)])) : `<p class="sub">${s.sources.firms?.ok ? 'No hotspots within 60 km in the last 48 h (NASA) or 2 h (Himawari).' : 'Feed unavailable: ' + esc(s.sources.firms?.error)}</p>`;
   $('quakes').innerHTML = s.quakes.length ? table(['Mag', 'Where', 'MMI', 'When'], s.quakes.map((q) =>
     [`M${q.magnitude.toFixed(1)}`, `<a href="${esc(q.url)}" target="_blank" rel="noopener">${esc(q.locality)}</a>`, q.mmi, ago(q.time)]), true) : '<p class="sub">No felt earthquakes nearby recently.</p>';
   $('places').innerHTML = table(['Place', 'Now', 'Today', 'Rain', 'Gust'], s.places.map((p) =>

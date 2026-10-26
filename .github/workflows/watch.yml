@@ -25,6 +25,8 @@ jobs:
         env:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           FIRMS_MAP_KEY: ${{ secrets.FIRMS_MAP_KEY }}
+          PTREE_USER: ${{ secrets.PTREE_USER }}
+          PTREE_PASS: ${{ secrets.PTREE_PASS }}
           HEALTHCHECK_URL: ${{ secrets.HEALTHCHECK_URL }}
           DASHBOARD_URL: ${{ vars.DASHBOARD_URL }}
         run: node scripts/run.mjs
