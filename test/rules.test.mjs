@@ -70,3 +70,9 @@ test('quiet weather gives no alerts', () => {
   assert.equal(R.weatherAlerts(w.hourly, R.localNow()).length, 0);
   assert.equal(R.fireWeatherAlerts(R.fireWeather(w.hourly), R.localNow().slice(0, 10)).length, 0);
 });
+
+test('MetService colour codes set the alert level', () => {
+  assert.equal(R.capLevel({ headline: 'Strong Wind Warning - Orange', severity: 'Moderate' }), 'warning');
+  assert.equal(R.capLevel({ headline: 'Heavy Rain Warning - Red', severity: 'Severe' }), 'urgent');
+  assert.equal(R.capLevel({ headline: 'Strong Wind Watch', severity: 'Minor' }), 'info');
+});
