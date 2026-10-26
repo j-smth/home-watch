@@ -76,3 +76,12 @@ test('MetService colour codes set the alert level', () => {
   assert.equal(R.capLevel({ headline: 'Heavy Rain Warning - Red', severity: 'Severe' }), 'urgent');
   assert.equal(R.capLevel({ headline: 'Strong Wind Watch', severity: 'Minor' }), 'info');
 });
+
+test('nearby detections of one fire make one alert', () => {
+  const t = new Date(Date.now() - 3600e3).toISOString().slice(0, 19) + 'Z';
+  const pts = [[-43.52, 172.505], [-43.52, 172.52], [-43.525, 172.53]].map(([lat, lon]) =>
+    ({ lat, lon, time: t, confidence: 'n', frp: 5, source: 'VIIRS_NOAA21_NRT' }));
+  const a = R.hotspotAlerts(pts, null);
+  assert.equal(a.length, 1);
+  assert.match(a[0].body, /3 detections/);
+});
