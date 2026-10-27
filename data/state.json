@@ -1,14 +1,14 @@
 {
  "sent": {},
  "failures": {
-  "weather": 1,
+  "weather": 0,
   "places": 0,
   "air": 0,
   "river": 0,
   "metservice": 0,
   "firms": 0,
   "geonet": 0,
-  "himawari": 28
+  "himawari": 29
  },
  "lastDigest": null
 }
