@@ -6,9 +6,9 @@
   "air": 0,
   "river": 0,
   "metservice": 0,
-  "firms": 0,
+  "firms": 1,
   "geonet": 0,
-  "himawari": 60
+  "himawari": 61
  },
  "lastDigest": null
 }
